@@ -1,65 +1,131 @@
-import Image from "next/image";
+// src/app/page.tsx
+"use client";
 
-export default function Home() {
+import { useEffect, useState } from "react";
+import StatusCard from "@/components/StatusCard";
+import ParseForm from "@/components/ParseForm";
+import KeywordsTable from "@/components/KeywordsTable";
+import VideosTable from "@/components/VideosTable";
+import { useStatus } from "@/hooks/useStatus";
+import { useKeywords } from "@/hooks/useKeywords";
+import { useVideos, type VideoSort } from "@/hooks/useVideos";
+
+export default function DashboardPage() {
+  const [selectedKeyword, setSelectedKeyword] = useState("");
+
+
+  const [sort, setSort] = useState<VideoSort>("delta");
+  const [onlyNew, setOnlyNew] = useState(false);
+  const [onlyHot, setOnlyHot] = useState(false);
+
+  const statusHook = useStatus();
+  const keywordsHook = useKeywords();
+
+  const allKeywords = keywordsHook.keywords.map((k) => k.keyword);
+
+
+  const [videoKeywordFilter, setVideoKeywordFilter] = useState<string>("");
+
+
+  useEffect(() => {
+    if (allKeywords.length > 0 && !selectedKeyword && !videoKeywordFilter) {
+      const first = allKeywords[0];
+      setSelectedKeyword(first);
+      setVideoKeywordFilter(first);
+    }
+  }, [allKeywords, selectedKeyword, videoKeywordFilter]);
+
+
+  const videoKeywordsForHook = videoKeywordFilter ? [videoKeywordFilter] : [];
+
+  const videosHook = useVideos(videoKeywordsForHook, sort, onlyNew, onlyHot);
+
+  const handleParsed = async () => {
+    await Promise.all([
+      statusHook.refresh(),
+      keywordsHook.refresh(),
+      videosHook.refresh(),
+    ]);
+  };
+
+  const handleSelectKeyword = (kw: string) => {
+    setSelectedKeyword(kw);
+    setVideoKeywordFilter(kw);
+  };
+
+
+  const handleVideoKeywordChange = (kw: string) => {
+    setVideoKeywordFilter(kw);
+    if (kw) setSelectedKeyword(kw);
+  };
+
+  const activeKeywordForForm = selectedKeyword || allKeywords[0] || "";
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+    <main className="min-h-screen bg-slate-50 text-slate-900 px-4 py-6 md:px-8 md:py-8">
+      <header className="mb-6 flex flex-col gap-3 md:mb-8 md:flex-row md:items-center md:justify-between">
+        <div>
+          <div className="inline-flex items-center gap-2 rounded-full bg-[#00A651]/10 px-3 py-1 text-xs font-medium text-[#007f3d] mb-2">
+            <span className="h-2 w-2 rounded-full bg-[#00A651]" />
+            Внутренний дашборд
+          </div>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
+            Поиск роликов в TikTok
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p className="mt-1 text-xs md:text-sm text-slate-500">
+            Шаг 1 — вводим слово. Шаг 2 — жмём кнопку. Шаг 3 — смотрим ролики
+            ниже 😊
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+        <div className="text-xs md:text-sm text-slate-400 md:text-right">
+          Рабочая экосистема SaleScout · быстрый поиск по ключевым словам
         </div>
-      </main>
-    </div>
+      </header>
+
+
+      <div className="grid gap-4 md:gap-6 lg:grid-cols-3 items-stretch mb-6">
+        <div className="lg:col-span-2 space-y-4 md:space-y-5">
+          <StatusCard
+            status={statusHook.status}
+            loading={statusHook.loading}
+            onRefresh={statusHook.refresh}
+          />
+
+          <ParseForm
+            initialKeyword={activeKeywordForForm}
+            isParserRunning={!!statusHook.status?.parser.isRunning}
+            onParsed={handleParsed}
+          />
+        </div>
+
+        <div className="lg:col-span-1 h-full">
+          <KeywordsTable
+            keywords={keywordsHook.keywords}
+            loading={keywordsHook.loading}
+            selectedKeyword={selectedKeyword}
+            onSelectKeyword={handleSelectKeyword}
+          />
+        </div>
+      </div>
+
+
+      <VideosTable
+        videos={videosHook.videos}
+        loading={videosHook.loading}
+        total={videosHook.total}
+        page={videosHook.page}
+        totalPages={videosHook.totalPages}
+        onPageChange={videosHook.setPage}
+        sort={sort}
+        onSortChange={setSort}
+        onlyNew={onlyNew}
+        onlyHot={onlyHot}
+        onToggleOnlyNew={() => setOnlyNew((v) => !v)}
+        onToggleOnlyHot={() => setOnlyHot((v) => !v)}
+        allKeywords={allKeywords}
+        keywordFilter={videoKeywordFilter}
+        onKeywordFilterChange={handleVideoKeywordChange}
+      />
+    </main>
   );
 }
